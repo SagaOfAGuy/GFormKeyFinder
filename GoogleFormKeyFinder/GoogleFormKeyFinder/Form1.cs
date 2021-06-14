@@ -18,6 +18,7 @@ namespace GoogleFormKeyFinder
     public partial class Form1 : Form
     {
         public String url = "";
+        public String responseURL = "";
         public Form1()
         {
             
@@ -34,8 +35,14 @@ namespace GoogleFormKeyFinder
         }
         public void button1_Click(object sender, EventArgs e)
         {
-            url = textBox1.Text;            
+            if (groupBox1.Text.Length > 1)
+            {
+                groupBox1.Text = "";
+                richTextBox1.Text = "";
+            }
 
+            url = textBox1.Text;
+            
             var chromeOptions = new ChromeOptions();
             chromeOptions.AddUserProfilePreference("download.default_directory", AppDomain.CurrentDomain.BaseDirectory);
             chromeOptions.AddArguments(new List<string>() {
@@ -61,85 +68,109 @@ namespace GoogleFormKeyFinder
             }
             try
             {
-               
-                var keyDiv = driver.FindElement(By.XPath("/html/body/div/div[2]/form/div[1]/div"));
-                var keys = keyDiv.FindElements(By.XPath(".//*[@type='hidden']"));
-                foreach (var key in keys)
-                {
+                
+                
+                    var keyDiv = driver.FindElement(By.XPath("/html/body/div/div[2]/form/div[1]/div"));
+                    var keys = keyDiv.FindElements(By.XPath(".//*[@type='hidden']"));
+                    foreach (var key in keys)
+                    {
 
-                    groupBox1.Text += key.GetAttribute("name");
-                    groupBox1.Text += "=";
-                    groupBox1.Text += "\n";
-                }
+                        groupBox1.Text += key.GetAttribute("name");
+                        groupBox1.Text += "=";
+                        groupBox1.Text += "\n";
+                    }
+                
             }
             catch (Exception)
             {
                 MessageBox.Show("Form Keys not found on site");
             }
+            
             driver.Close();
             driver.Quit();
+           
         }
         private void groupBox1_Enter(object sender, EventArgs e)
         {
 
         }
-        private void button2_Click(object sender, EventArgs e)
+        public void button2_Click(object sender, EventArgs e)
         {
+            int slashIndex = url.LastIndexOf("/");
+            responseURL = url.Substring(0, slashIndex) + "/formResponse";
             using (var dialog = new SaveFileDialog())
             {
                 dialog.Filter = "Data Sources(*.ini) | *.ini *| All Files | *.*";
-                
                 if(dialog.ShowDialog() == DialogResult.OK)
                 {
                     File.AppendAllText(dialog.FileName, "[FormKeys]\n");
                     File.AppendAllText(dialog.FileName, groupBox1.Text);
+                    File.AppendAllText(dialog.FileName, "[FormLink]\n");
+                    File.AppendAllText(dialog.FileName, responseURL);
                 }
             }
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        public void button3_Click(object sender, EventArgs e)
         {
-            url = textBox1.Text;
-            int slashIndex = url.LastIndexOf("/");
-            String responseURL = url.Substring(0, slashIndex)+"/formResponse";
-            String text = groupBox1.Text.Replace("\n", "");
-            var client = new RestClient(responseURL);
-            client.Timeout = -1;
-            var request = new RestRequest(Method.POST);
-            request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
-            String [] formKeys = text.Split('=');
-            DateTime date = DateTime.Now;
-            for (int index = 0; index < formKeys.Length-1; index++)
-            {
-                if (index == 0)
-                {
-                    request.AddParameter(formKeys[index],date.Year.ToString());
-                } else if (index == 1)
-                {
-                    request.AddParameter(formKeys[index],date.Month.ToString());
-                } else if(index == 2)
-                {
-                    request.AddParameter(formKeys[index],date.Day.ToString());
-                } else
-                {
-                    request.AddParameter(formKeys[index], "Testing");
-                }
-            }
             try
             {
+                int slashIndex = url.LastIndexOf("/");
+                responseURL = url.Substring(0, slashIndex) + "/formResponse";
+                String text = groupBox1.Text.Replace("\n", "");
+                var client = new RestClient(responseURL);
+                client.Timeout = -1;
+                var request = new RestRequest(Method.POST);
+                request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
+                String[] formKeys = text.Split('=');
+                DateTime date = DateTime.Now;
+                String bodString = $"$body = ";
+                for (int index = 0; index < formKeys.Length-1; index++)
+                {
+                    if (index == 0)
+                    {
+                        request.AddParameter(formKeys[index], date.Year.ToString());
+                        bodString += $"'{formKeys[index]}={date.Year.ToString()}&";
+                    }
+                    else if (index == 1)
+                    {
+                        request.AddParameter(formKeys[index], date.Month.ToString());
+                        bodString += $"{formKeys[index]}={date.Month.ToString()}&";
+                    }
+                    else if (index == 2)
+                    {
+                        request.AddParameter(formKeys[index], date.Day.ToString());
+                        bodString += $"{formKeys[index]}={date.Day.ToString()}&";
+                    }
+                    else if (index == formKeys.Length-2)
+                    {
+                        request.AddParameter(formKeys[index], "Testing");
+                        bodString += $"{formKeys[index]}=Testing'";
+                    }
+                    else
+                    {
+                        request.AddParameter(formKeys[index], "Testing");
+                        bodString += $"{formKeys[index]}=Testing&";
+                    }
+                }
                 IRestResponse response = client.Execute(request);
                 MessageBox.Show("POST Request Successful");
                 String headerString = "$headers = New-Object 'System.Collections.Generic.Dictionary[[String],[String]]';";
                 String headerAdd = "$headers.Add('Content-Type', 'application/x-www-form-urlencoded');";
-                String bodyString = $"$body = '{formKeys[0]}=2021&{formKeys[1]}=6&{formKeys[2]}=7&{formKeys[3]}=test&{formKeys[4]}=test&{formKeys[5]}=test&{formKeys[6]}=test&{formKeys[7]}=test'";
                 String responseString = $"$response = Invoke-RestMethod '{responseURL}' -Method 'POST' -Headers $headers -Body $body";
 
-                richTextBox1.Text = $"{headerString}\n\n{headerAdd}\n\n{bodyString}\n\n{responseString}";
+                richTextBox1.Text = $"{headerString}\n\n{headerAdd}\n\n{bodString}\n\n{responseString}";
             }
-            catch(Exception)
-            {
+            catch(Exception ex) { 
                 MessageBox.Show("POST Request Failure");
+                MessageBox.Show(ex.Message.ToString());
+                
             }
+        }
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
