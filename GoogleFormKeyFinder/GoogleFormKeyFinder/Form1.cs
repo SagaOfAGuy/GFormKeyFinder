@@ -38,6 +38,11 @@ namespace GoogleFormKeyFinder
                 groupBox1.Text = "";
                 richTextBox1.Text = "";
             }
+            /*
+             * 
+             * 
+             * 
+             */
             url = textBox1.Text;            
             var chromeOptions = new ChromeOptions();
             chromeOptions.AddUserProfilePreference("download.default_directory", AppDomain.CurrentDomain.BaseDirectory);
@@ -46,6 +51,7 @@ namespace GoogleFormKeyFinder
                 "--no-startup-window",
                 "no-sandbox",
                "headless",
+
 
             });
             var chromeDriverService = ChromeDriverService.CreateDefaultService(Environment.CurrentDirectory);
@@ -72,9 +78,10 @@ namespace GoogleFormKeyFinder
                     groupBox1.Text += "\n";
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 MessageBox.Show("Form Keys not found on site");
+               
             }
             driver.Close();
             driver.Quit();
