@@ -5,6 +5,8 @@ Windows Forms Application that scrapes HTML of a Google Form, and returns the ke
 
 Inside of the Project Directory, navigate to the public folder. Then, inside the folder, double click setup.exe, and the program will download.
 
+NOTE: The Google Form must be set to public in order for POST requests to return entry keys
+
 # Usage
 
 Locate the link for your google form, and paste it into the textbox, and click the Submit button
