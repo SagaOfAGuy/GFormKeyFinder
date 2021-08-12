@@ -16,7 +16,7 @@ Locate the link for your google form, and paste it into the textbox, and click t
 
 
 Afterwards, there should be a list of entry keys taken from the Google Form as seen below: 
-NOTE: The entry keys are appended with a '=' symbol to accomodate for config file format for the RoomCheck GUI application. For the actual entry key, remove the '=' symbols at the end of the string.
+NOTE: The entry keys are appended with a '=' symbol to accomodate for config file format for a separate application. For the actual entry key, remove the '=' symbols at the end of the string.
 
 ![Image2](images/snip2.PNG)
 
